@@ -1,30 +1,36 @@
 import numpy as np
+from scipy.io import loadmat
+from sklearn.svm import SVC
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
+from AugmentedLagrangianSVM import AugmentedLagrangianSVM
+from extract_features import ExtractFeatures
 
-def get_projection(a, b):
 
-    if a < b:
-        def p(x):
-            if x < a:
-                return a
-            elif a < x < b:
-                return x
-            else:
-                return b
-    else:
-        raise ValueError("lower limit larger than upper limit")
+def load_data(x_name, y_name):
+    # Load the data from .mat files
+    x = loadmat(x_name + ".mat")[x_name]
+    y = loadmat(y_name)[y_name].ravel().astype(float)
+    y[y == 9] = 1
+    y[y == 0] = -1
+    return x, y
 
-    return p
 
-def ArmijoRule(f: callable, x_k:np.array, df_xk:np.array, f_xk: np.array, d_k:np.array, sigma, beta, alpha_0, Flag=False, constraints_limits: tuple=None):
-    alpha = alpha_0
-    x_alpha = x_k + alpha * d_k
+X_train, y_train = load_data('xForTraining', 'labelsForTraining')
+X_train = ExtractFeatures(X_train, 50)
+X_test, y_test = load_data('xForTest', 'labelsForTest')
+X_test = ExtractFeatures(X_test, 50)
+aug = AugmentedLagrangianSVM()
+# Create an SVM classifier
+clf = SVC(kernel='linear')  # You can change the kernel and other parameters as needed
 
-    if Flag and len(constraints_limits) == 2:
-        p = get_projection(constraints_limits[0], constraints_limits[1])
-    else:
-        p = lambda x: x
+for model in [clf, aug]:
+    # Fit the SVM model
+    model.fit(X_train.T, y_train)
 
-    while f(x_alpha) - f_xk <= sigma * df_xk @ (x_alpha - x_k):
-        x_alpha = p(x_k + alpha * d_k)
+    # Predict on the test set
+    y_pred = model.predict(X_test.T)
 
-    return x_alpha
+    # Evaluate the model
+    accuracy = accuracy_score(y_test, y_pred)
+    print(f'Accuracy: {accuracy:.2f}')
