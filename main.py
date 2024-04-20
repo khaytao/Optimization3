@@ -1,10 +1,12 @@
 import numpy as np
+import numpy.random
 from scipy.io import loadmat
 from sklearn.svm import SVC
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 from AugmentedLagrangianSVM import AugmentedLagrangianSVM
 from extract_features import ExtractFeatures
+import scipy
 
 
 def load_data(x_name, y_name):

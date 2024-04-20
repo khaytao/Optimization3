@@ -63,19 +63,25 @@ def ArmijoRule(f: callable, x_k: np.array, df_xk: np.array, f_xk: float, d_k: np
 
     get_x = lambda a: p(x_k + a * d_k)
     alpha = alpha_0
-    x_alpha = get_x(alpha)
+    x_alpha = get_x(alpha_0)
 
     def did_converge(x_alpha):
         # print(f'RHS:{sigma * df_xk @  d_k * alpha}')
         # print(f'LHS:{f(x_alpha) - f_xk}')
-        return f(x_alpha) - f_xk <= sigma * df_xk @  d_k * alpha  # Equivalent to (x_alpha - x_k)
+        # return f(x_alpha) - f_xk <= sigma * df_xk @  d_k * alpha  # Equivalent to (x_alpha - x_k)
+        return f(x_alpha) - f_xk <= sigma * alpha * df_xk @  (x_alpha - x_k)  # Equivalent to (x_alpha - x_k)
 
     while not did_converge(x_alpha):  # todo maybe add restriction on number of iterations
         alpha = beta * alpha
         x_alpha = get_x(alpha)
         # print(f"Amarijo: {alpha}")
-        if alpha < 1e-8:  # A practical threshold to avoid infinite loops
-            break
+        if alpha < 1e-8 and alpha < np.linalg.norm((x_alpha - x_k), ord=2):  # A practical threshold to avoid infinite loops
+            print("we didn't converge")
+            print(np.linalg.norm((x_alpha - x_k), ord=2))
+            return alpha
+
+    # print(f'RHS:{sigma * df_xk @  d_k * alpha}')
+    # print(f'LHS:{f(x_alpha) - f_xk}')
     return alpha
 
 

@@ -119,14 +119,23 @@ def augmented_lagrangian_method(X, y, lamda_0, mu_0, p0, C, beta, p_max, num_ite
         # decent_direction = decent_direction/np.linalg.norm(decent_direction)
         alpha = ArmijoRule(L, lamda_k, -decent_direction, L(lamda_k), decent_direction, armijo_sigma, armijo_beta,
                            armijo_a0, Flag=True, projection=p)
-        if alpha < 0:
-            print("YEE PEE KA YAY")
-            continue
+
         # debug, comparing gradient calculation to approximation
         grad_appx = approximate_gradient(lamda_k, L)
-
         # print(f"approximation difference: {mean_squere_error(grad_appx, -decent_direction)}")
         print(f"Gradient norm: {np.linalg.norm(dl(lamda_k), ord=2)}")
+
+        # if alpha < 1e-8:
+        #     print(f"approximation difference: {mean_squere_error(grad_appx, -decent_direction)}")
+        #     grad1_norm = np.linalg.norm(dl(p(lamda_k * alpha * decent_direction)), ord=2)
+        #     grad2_norm = np.linalg.norm(dl(p(lamda_k + 10 * alpha * decent_direction)), ord=2)
+        #     if grad2_norm < grad1_norm and grad2_norm >= 0:
+        #         lamda_k = p(lamda_k + 10 * alpha * decent_direction)
+        #         mu_k = p_k * h(lamda_k) + mu_k
+        #         p_k = min(beta * p_k, p_max)
+        #     # armijo_a0 = armijo_beta*armijo_a0
+        #
+        #     continue
 
         # calculating the discrete derivative manually
         # lamda_k_old = np.array(lamda_k, copy=True)
