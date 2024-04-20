@@ -23,10 +23,10 @@ def g_prime(alpha, x, d):
 x = np.array([1, 2])
 d = np.array([2, 1])
 
-x_k = 0
+x_k = np.zeros(shape=(2,))
 df_xk = grad_f(x_k)
 f_xk = f(x_k)
-d_k = 1
+d_k = np.reshape(np.array([1, 1]), (2,))
 sigma = 0.25
 beta = 0.5
 alpha_0 = 1
@@ -69,20 +69,20 @@ class TestArmijoRule(unittest.TestCase):
         # Test that the Armijo rule reduces alpha to satisfy the Armijo condition
         alpha = ArmijoRule(f, x_k, df_xk, f_xk, d_k, sigma, beta, alpha_0)
         # Check if the condition is met
-        self.assertTrue(f(x_k + alpha * d_k) <= f_xk + sigma * alpha * df_xk * d_k)
+        self.assertTrue(f(x_k + alpha * d_k) <= f_xk + sigma * alpha * df_xk @ d_k)
 
     def test_initial_alpha(self):
         # Test with initial alpha that already satisfies the condition
         initial_alpha = 0.1
         alpha = ArmijoRule(f, x_k, df_xk, f_xk, d_k, sigma, beta, initial_alpha)
-        self.assertTrue(f(x_k + alpha * d_k) <= f_xk + sigma * alpha * df_xk * d_k)
+        self.assertTrue(f(x_k + alpha * d_k) <= f_xk + sigma * alpha * df_xk @ d_k)
 
     def test_projection_used(self):
         # Test the function with a projection function
         Flag = True
         projection = get_projection(0, 5)
         alpha = ArmijoRule(f, x_k, df_xk, f_xk, d_k, sigma, beta, alpha_0, Flag, projection)
-        self.assertTrue(f(projection(x_k + alpha * d_k)) <= f_xk + sigma * alpha * df_xk * d_k)
+        self.assertTrue(f(projection(x_k + alpha * d_k)) <= f_xk + sigma * alpha * df_xk @ d_k)
 
     def test_small_beta_large_decrease(self):
         # Test that a smaller beta results in smaller step sizes
