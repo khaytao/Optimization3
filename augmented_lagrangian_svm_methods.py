@@ -109,6 +109,7 @@ def augmented_lagrangian_method(X, y, lamda_0, mu_0, p0, C, beta, p_max, num_ite
         # lamda_k = projected_gradient_descent(L, dl, lamda_k, 0, C, armijo_sigma, armijo_beta,
         # armijo_a0)  # todo think about convinient way to tune parameters
         decent_direction = -dl(lamda_k)
+        # decent_direction = decent_direction/np.linalg.norm(decent_direction)
         alpha = ArmijoRule(L, lamda_k, -decent_direction, L(lamda_k), decent_direction, armijo_sigma, armijo_beta,
                            armijo_a0, Flag=True, projection=p)
 
@@ -121,6 +122,7 @@ def augmented_lagrangian_method(X, y, lamda_0, mu_0, p0, C, beta, p_max, num_ite
         # lamda_k_old = np.array(lamda_k, copy=True)
         lamda_k = p(lamda_k + alpha * decent_direction)
 
+
         # f_x_delta = np.zeros(lamda_k.shape)
         # for i in range(f_x_delta.size):
         #     dx = np.array(lamda_k_old, copy=True)
@@ -130,6 +132,7 @@ def augmented_lagrangian_method(X, y, lamda_0, mu_0, p0, C, beta, p_max, num_ite
         # print(np.linalg.norm((f_x_delta + decent_direction)))
         #
         # dl_neq = dl(lamda_k)
+
         # evaluate multiplier
         mu_k = p_k * h(lamda_k) + mu_k
 
