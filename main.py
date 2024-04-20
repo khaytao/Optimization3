@@ -24,7 +24,11 @@ aug = AugmentedLagrangianSVM()
 # Create an SVM classifier
 clf = SVC(kernel='linear')  # You can change the kernel and other parameters as needed
 
-for model in [clf, aug]:
+for model, iteration_num in zip([clf, aug], [1, 2]):
+    if iteration_num == 1:
+        print(f'Running algorithm clf.')
+    else:
+        print(f'Running algorithm aug.')
     # Fit the SVM model
     model.fit(X_train.T, y_train)
 

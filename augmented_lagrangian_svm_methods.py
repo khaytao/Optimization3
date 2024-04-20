@@ -2,6 +2,7 @@ import random
 from projected_gradient_descent import projected_gradient_descent
 from tqdm import tqdm
 import numpy as np
+from projected_gradient_descent import ArmijoRule, get_projection
 
 
 # todo delete
@@ -25,15 +26,17 @@ def get_Q(X, y):
     return Q
 
 
-def dual_svm(lamda: np.array, X, y):
-    return np.sum(lamda) - quadratic_form(lamda, X, y)
+# def dual_svm(lamda: np.array, X, y):
+#     return np.sum(lamda) - quadratic_form(lamda, X, y)
 
 
 def get_f(Q):
+    # - because the original problem is maximization problem.
     return lambda lamda: quadratic_form(lamda, None, None, Q) - np.sum(lamda)
 
 
 def df(lamda, Q):
+    # - because the original problem is maximization problem.
     return Q @ lamda - np.ones_like(lamda)
 
 
@@ -49,7 +52,9 @@ def get_dl(Q, y, mu, p):
     df = get_df(Q)
 
     def dl(lamda):
-        return df(lamda) + mu * y + p * 2 * y @ y * lamda
+        """we stack the derivative over mu under the derivative by lamda."""
+        dlamda = df(lamda) + mu * y + p * (y @ y) * lamda
+        return dlamda
 
     return dl
 
@@ -76,6 +81,8 @@ def augmented_lagrangian_method(X, y, lamda_0, mu_0, p0, C, beta, p_max, num_ite
     mu_k = mu_0
     p_k = p0
 
+    p = get_projection(0, C)
+
     if beta < 1:
         raise ValueError(f"parameter beta must be greater than 1. got {beta}")
 
@@ -86,9 +93,25 @@ def augmented_lagrangian_method(X, y, lamda_0, mu_0, p0, C, beta, p_max, num_ite
         # evaluate new solution
         L = get_augmented_lagrangian(Q, y, mu_k, p_k)
         dl = get_dl(Q, y, mu_k, p_k)
-        lamda_k = projected_gradient_descent(L, dl, lamda_k, 0, C, armijo_sigma, armijo_beta,
-                                             armijo_a0)  # todo think about convinient way to tune parameters
+        # lamda_k = projected_gradient_descent(L, dl, lamda_k, 0, C, armijo_sigma, armijo_beta,
+                                             # armijo_a0)  # todo think about convinient way to tune parameters
+        decent_direction = -dl(lamda_k)
+        alpha = ArmijoRule(L, lamda_k, -decent_direction, L(lamda_k), decent_direction, armijo_sigma, armijo_beta,
+                           armijo_a0, Flag=True, projection=p)
 
+        # calculating the discrete derivative manually
+        lamda_k_old = np.array(lamda_k, copy=True)
+        lamda_k = p(lamda_k + alpha * decent_direction)
+
+        f_x_delta = np.zeros(lamda_k.shape)
+        for i in range(f_x_delta.size):
+            dx = np.array(lamda_k_old, copy=True)
+            dx[i] = lamda_k[i]
+            delta_x = (lamda_k[i] - lamda_k_old[i]) + 1e-6
+            f_x_delta[i] = (L(dx) - L(lamda_k_old)) / delta_x
+        print(np.linalg.norm((f_x_delta + decent_direction)))
+
+        dl_neq = dl(lamda_k)
         # evaluate multiplier
         mu_k = p_k * h(lamda_k) + mu_k
 

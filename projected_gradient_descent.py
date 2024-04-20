@@ -5,7 +5,8 @@ def get_projection(a, b):
     if a <= b:
         def p(x):
             # duplicate array for safety. todo might be possible to implement in place
-            y = x
+            # y = x
+            y = np.array(x, copy=True)
             y[y < a] = a
             y[y > b] = b
             return y
@@ -65,12 +66,14 @@ def ArmijoRule(f: callable, x_k: np.array, df_xk: np.array, f_xk: float, d_k: np
     x_alpha = get_x(alpha)
 
     def did_converge(x_alpha):
-        return f(x_alpha) - f_xk <= sigma *  df_xk @  d_k * alpha  # Equivalent to (x_alpha - x_k)
+        # print(f'RHS:{sigma * df_xk @  d_k * alpha}')
+        # print(f'LHS:{f(x_alpha) - f_xk}')
+        return f(x_alpha) - f_xk <= sigma * df_xk @  d_k * alpha  # Equivalent to (x_alpha - x_k)
 
     while not did_converge(x_alpha):  # todo maybe add restriction on number of iterations
         alpha = beta * alpha
         x_alpha = get_x(alpha)
-        print(f"Amarijo: {alpha}")
+        # print(f"Amarijo: {alpha}")
         if alpha < 1e-8:  # A practical threshold to avoid infinite loops
             break
     return alpha
@@ -99,8 +102,11 @@ def projected_gradient_descent(f, df, x0, a, b, sigma, beta, alpha_0, num_iter=1
         if fx < tolerance:
             return xk
 
-        dk = - df(x0)
+        # dk = - df(x0)
+        dk = - df(xk)
         ak = ArmijoRule(f, xk, -dk, fx, dk, sigma, beta, alpha_0, True,  p)
-
+        if ak < 1e-8:
+            print(f'ak in so small (ak = {ak}) we are not moving. exiting the function in iteration {k}.')
+            return xk
         xk = p(xk + ak * dk)
     return xk
