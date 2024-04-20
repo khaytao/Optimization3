@@ -125,7 +125,8 @@ def augmented_lagrangian_method(X, y, lamda_0, mu_0, p0, C, beta, p_max, num_ite
         # print(f"approximation difference: {mean_squere_error(grad_appx, -decent_direction)}")
         print(f"Gradient norm: {np.linalg.norm(dl(lamda_k), ord=2)}")
 
-        # if alpha < 1e-8:
+        if alpha < 1e-8:
+            return lamda_k # If we got s very small alpha, we'll have no change to lamda, and as such no change to alpha etc..
         #     print(f"approximation difference: {mean_squere_error(grad_appx, -decent_direction)}")
         #     grad1_norm = np.linalg.norm(dl(p(lamda_k * alpha * decent_direction)), ord=2)
         #     grad2_norm = np.linalg.norm(dl(p(lamda_k + 10 * alpha * decent_direction)), ord=2)
@@ -175,3 +176,15 @@ def test_Q(Q, x, y, N=100, epsilon=10 ** (-4)):
 
         if abs(val - qij) > epsilon:
             print(abs(val - qij))
+
+
+def empiric_varify_convexity(f, N, C, n=100000):
+
+    for i in tqdm(range(n)):
+        t = np.random.rand()
+
+        x1 = np.random.rand(N) * C
+        x2 = np.random.rand(N) * C
+
+        if f(t*x1 + (1-t) * x2) > t * f(x1) + (1-t) * f(x2):
+            print("Not convex")

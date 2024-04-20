@@ -24,7 +24,7 @@ X_test, y_test = load_data('xForTest', 'labelsForTest')
 X_test = ExtractFeatures(X_test, 50)
 aug = AugmentedLagrangianSVM()
 # Create an SVM classifier
-clf = SVC(kernel='linear')  # You can change the kernel and other parameters as needed
+clf = SVC(C=0.07, kernel='linear')  # You can change the kernel and other parameters as needed
 
 for model, iteration_num in zip([clf, aug], [1, 2]):
     if iteration_num == 1:

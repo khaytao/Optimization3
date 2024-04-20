@@ -32,7 +32,7 @@ def get_projection(a, b):
 #
 #     return x_alpha
 
-
+armijo_calls = [0]
 def ArmijoRule(f: callable, x_k: np.array, df_xk: np.array, f_xk: float, d_k: np.array, sigma, beta, alpha_0,
                Flag=False, projection:callable = None):
     """
@@ -51,6 +51,7 @@ def ArmijoRule(f: callable, x_k: np.array, df_xk: np.array, f_xk: float, d_k: np
     :return:
     """
     # initialize parameters
+    global armijo_calls
     if Flag and callable(projection):
         p = projection
     else:
@@ -65,6 +66,10 @@ def ArmijoRule(f: callable, x_k: np.array, df_xk: np.array, f_xk: float, d_k: np
     alpha = alpha_0
     x_alpha = get_x(alpha_0)
 
+    xs = np.linspace(0, 1, 1000)
+    yf = np.array([f(get_x(alpha)) for alpha in xs.tolist()])
+    import matplotlib.pyplot as plt
+
     def did_converge(x_alpha):
         # print(f'RHS:{sigma * df_xk @  d_k * alpha}')
         # print(f'LHS:{f(x_alpha) - f_xk}')
@@ -78,10 +83,17 @@ def ArmijoRule(f: callable, x_k: np.array, df_xk: np.array, f_xk: float, d_k: np
         if alpha < 1e-8 and alpha < np.linalg.norm((x_alpha - x_k), ord=2):  # A practical threshold to avoid infinite loops
             print("we didn't converge")
             print(np.linalg.norm((x_alpha - x_k), ord=2))
-            return alpha
+
+            break
 
     # print(f'RHS:{sigma * df_xk @  d_k * alpha}')
     # print(f'LHS:{f(x_alpha) - f_xk}')
+    x_alpha = get_x(alpha)
+    plt.figure()
+    plt.plot(xs, yf)
+    plt.plot(alpha, f(x_alpha))
+    plt.savefig(f"outputs\\{armijo_calls[0]}.png")
+    armijo_calls[0]+= 1
     return alpha
 
 
