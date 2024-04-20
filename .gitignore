@@ -2,3 +2,4 @@
 *.mat
 .venv
 .idea
+__pycache__/

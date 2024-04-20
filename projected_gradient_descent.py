@@ -32,7 +32,7 @@ def get_projection(a, b):
 #     return x_alpha
 
 
-def ArmijoRule(f: callable, x_k: np.array, df_xk: np.array, f_xk: np.array, d_k: np.array, sigma, beta, alpha_0,
+def ArmijoRule(f: callable, x_k: np.array, df_xk: np.array, f_xk: float, d_k: np.array, sigma, beta, alpha_0,
                Flag=False, projection:callable = None):
     """
     Perform a line search using Armijo rule and return the step size alpha.
@@ -55,17 +55,24 @@ def ArmijoRule(f: callable, x_k: np.array, df_xk: np.array, f_xk: np.array, d_k:
     else:
         p = lambda x: x
 
+    # as a precaution, cast all arrays into np arrays to support working with lists / scalars
+    x_k = np.asarray(x_k).astype(float)
+    df_xk = np.asarray(df_xk).astype(float)
+    d_k = np.asarray(d_k).astype(float)
+
     get_x = lambda a: p(x_k + a * d_k)
     alpha = alpha_0
     x_alpha = get_x(alpha)
 
     def did_converge(x_alpha):
-        return f(x_alpha) - f_xk <= sigma * df_xk @ (x_alpha - x_k)
+        return f(x_alpha) - f_xk <= sigma *  df_xk @  d_k * alpha  # Equivalent to (x_alpha - x_k)
 
     while not did_converge(x_alpha):  # todo maybe add restriction on number of iterations
         alpha = beta * alpha
         x_alpha = get_x(alpha)
         print(f"Amarijo: {alpha}")
+        if alpha < 1e-8:  # A practical threshold to avoid infinite loops
+            break
     return alpha
 
 
