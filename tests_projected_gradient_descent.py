@@ -90,27 +90,42 @@ class TestArmijoRule(unittest.TestCase):
         alpha_small_beta = ArmijoRule(f, x_k, df_xk, f_xk, d_k, sigma, small_beta, alpha_0)
         alpha_large_beta = ArmijoRule(f, x_k, df_xk, f_xk, d_k, sigma, beta, alpha_0)
         self.assertLess(alpha_small_beta, alpha_large_beta)
+
+    def test_armijo1(self):
+        def f(x):
+            return x.T @ x
+
+        def df(x):
+            return 2 * x
+
+        x_k = np.array([1.5])
+        d_k = -df(x_k)
+        p = get_projection(1, 3)
+        alpha_hat = ArmijoRule(f, x_k, df(x_k), f(x_k), d_k, sigma=0.3, beta=0.2, alpha_0=1, Flag=True, projection=p)
+        x_k2 = p(x_k + alpha_hat * d_k)
+        print(alpha_hat)
+        print(x_k2)
+        print(f(p(x_k2)))
+        self.assertAlmostEqual(f(x_k2), 1)
+
+    def test_armijo2(self):
+        def f(x):
+            return x.T @ x
+
+        def df(x):
+            return 2 * x
+
+        x_k = np.array([0.5])
+        d_k = -df(x_k)
+        p = get_projection(-1, 1)
+        alpha_hat = ArmijoRule(f, x_k, df(x_k), f(x_k), d_k, sigma=0.6, beta=0.8, alpha_0=1, Flag=True, projection=p)
+        x_k2 = p(x_k + alpha_hat * d_k)
+        print(f'alpha hat is: {alpha_hat}')
+        print(f'dk hat is: {d_k}')
+        print(f'x_k2 hat is: {x_k2}')
+        print(f'function value hat is: {f(x_k2)}')
+        self.assertAlmostEqual(f(x_k2), 0)
+
 # Run the tests
 if __name__ == '__main__':
     unittest.main()
-
-
-def test_armijo1():
-
-    def f(x):
-        return np.abs(x) **2
-
-    def df(x):
-        return 2 * x
-
-    x_k = np.array([-1])
-    d_k = np.array([10])
-    p = get_projection(1, 20)
-    alpha_hat = ArmijoRule(f, x_k, df(x_k), f(x_k), d_k, sigma=0.3, beta=0.2, alpha_0=1, Flag=False, projection=p)
-
-    print(alpha_hat)
-    print(f(x_k) + alpha_hat * d_k)
-
-
-if __name__ == '__main__':
-    test_armijo1()
