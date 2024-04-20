@@ -47,6 +47,11 @@ def get_df(Q):
 def get_h(y):
     return lambda lamda: lamda @ y
 
+def get_lamda_upper_constraint(c):
+    return lambda lamda: lamda - c * np.ones(shape=lamda.shape)
+
+def get_lamda_lower_constraint():
+    return lambda lamda: -lamda
 
 def get_dl(Q, y, mu, p):
     df = get_df(Q)
@@ -100,23 +105,28 @@ def augmented_lagrangian_method(X, y, lamda_0, mu_0, p0, C, beta, p_max, num_ite
         raise ValueError(f"parameter beta must be greater than 1. got {beta}")
 
     for k in tqdm(range(num_iter)):
-
-        if f(lamda_k) < tolerance:
-            return lamda_k
         # evaluate new solution
         L = get_augmented_lagrangian(Q, y, mu_k, p_k)
         dl = get_dl(Q, y, mu_k, p_k)
+
+        if np.linalg.norm(dl(lamda_k), ord=2) < tolerance:
+            print("We converged!")
+            return lamda_k
+
         # lamda_k = projected_gradient_descent(L, dl, lamda_k, 0, C, armijo_sigma, armijo_beta,
         # armijo_a0)  # todo think about convinient way to tune parameters
         decent_direction = -dl(lamda_k)
         # decent_direction = decent_direction/np.linalg.norm(decent_direction)
         alpha = ArmijoRule(L, lamda_k, -decent_direction, L(lamda_k), decent_direction, armijo_sigma, armijo_beta,
                            armijo_a0, Flag=True, projection=p)
-
+        if alpha < 0:
+            print("YEE PEE KA YAY")
+            continue
         # debug, comparing gradient calculation to approximation
         grad_appx = approximate_gradient(lamda_k, L)
 
-        print(f"approximation difference: {mean_squere_error(grad_appx, -decent_direction)}")
+        # print(f"approximation difference: {mean_squere_error(grad_appx, -decent_direction)}")
+        print(f"Gradient norm: {np.linalg.norm(dl(lamda_k), ord=2)}")
 
         # calculating the discrete derivative manually
         # lamda_k_old = np.array(lamda_k, copy=True)
