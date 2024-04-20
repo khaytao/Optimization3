@@ -69,13 +69,26 @@ def get_augmented_lagrangian(Q, y, mu, p):
     return L
 
 
+def approximate_gradient(x, f, delta=10 ** -5):
+    n = len(x)
+    dx = np.zeros_like(x)
+    I = np.eye(n)
+    for i in range(n):
+        dx[i] = (f(x + delta * I[:, i]) - f(x)) / delta
+
+    return dx
+
+
+def mean_squere_error(x, y):
+    return np.mean((x - y) ** 2)
+
+
 def augmented_lagrangian_method(X, y, lamda_0, mu_0, p0, C, beta, p_max, num_iter, tolerance, armijo_sigma, armijo_beta,
                                 armijo_a0):
     # initialize augmented lagrangian and it's derivative.
     Q = get_Q(X, y)
     f = get_f(Q)
     h = get_h(y)
-
 
     lamda_k = lamda_0
     mu_k = mu_0
@@ -94,24 +107,29 @@ def augmented_lagrangian_method(X, y, lamda_0, mu_0, p0, C, beta, p_max, num_ite
         L = get_augmented_lagrangian(Q, y, mu_k, p_k)
         dl = get_dl(Q, y, mu_k, p_k)
         # lamda_k = projected_gradient_descent(L, dl, lamda_k, 0, C, armijo_sigma, armijo_beta,
-                                             # armijo_a0)  # todo think about convinient way to tune parameters
+        # armijo_a0)  # todo think about convinient way to tune parameters
         decent_direction = -dl(lamda_k)
         alpha = ArmijoRule(L, lamda_k, -decent_direction, L(lamda_k), decent_direction, armijo_sigma, armijo_beta,
                            armijo_a0, Flag=True, projection=p)
 
+        # debug, comparing gradient calculation to approximation
+        grad_appx = approximate_gradient(lamda_k, L)
+
+        print(f"approximation difference: {mean_squere_error(grad_appx, -decent_direction)}")
+
         # calculating the discrete derivative manually
-        lamda_k_old = np.array(lamda_k, copy=True)
+        # lamda_k_old = np.array(lamda_k, copy=True)
         lamda_k = p(lamda_k + alpha * decent_direction)
 
-        f_x_delta = np.zeros(lamda_k.shape)
-        for i in range(f_x_delta.size):
-            dx = np.array(lamda_k_old, copy=True)
-            dx[i] = lamda_k[i]
-            delta_x = (lamda_k[i] - lamda_k_old[i]) + 1e-6
-            f_x_delta[i] = (L(dx) - L(lamda_k_old)) / delta_x
-        print(np.linalg.norm((f_x_delta + decent_direction)))
-
-        dl_neq = dl(lamda_k)
+        # f_x_delta = np.zeros(lamda_k.shape)
+        # for i in range(f_x_delta.size):
+        #     dx = np.array(lamda_k_old, copy=True)
+        #     dx[i] = lamda_k[i]
+        #     delta_x = (lamda_k[i] - lamda_k_old[i]) + 1e-6
+        #     f_x_delta[i] = (L(dx) - L(lamda_k_old)) / delta_x
+        # print(np.linalg.norm((f_x_delta + decent_direction)))
+        #
+        # dl_neq = dl(lamda_k)
         # evaluate multiplier
         mu_k = p_k * h(lamda_k) + mu_k
 
