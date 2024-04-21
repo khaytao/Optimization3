@@ -59,26 +59,27 @@ aug = AugmentedLagrangianSVM()
 # Create an SVM classifier
 clf = SVC(C=0.07, kernel='linear')  # You can change the kernel and other parameters as needed
 
-# for model, iteration_num in zip([clf, aug], [1, 2]):
-#     if iteration_num == 1:
-#         print(f'Running algorithm clf.')
-#     else:
-#         print(f'Running algorithm aug.')
-#     # Fit the SVM model
-#     model.fit(X_train.T, y_train)
-#
-#     # Predict on the test set
-#     y_pred = model.predict(X_test.T)
-#
-#     # Evaluate the model
-#     accuracy = accuracy_score(y_test, y_pred)
-#     print(f'Accuracy: {accuracy:.2f}')
+for model, iteration_num in zip([clf, aug], [1, 2]):
+    if iteration_num == 1:
+        print(f'Running algorithm clf.')
+        model.fit(X_train.T, y_train)
+    else:
+        print(f'Running algorithm aug.')
+        # Fit the SVM model
+        model.fit(X_train.T, y_train, num_iter=10)
+
+    # Predict on the test set
+    y_pred = model.predict(X_test.T)
+
+    # Evaluate the model
+    accuracy = accuracy_score(y_test, y_pred)
+    print(f'Accuracy: {accuracy:.2f}')
 
 from sklearn.datasets import make_blobs
 X, Y = make_blobs(n_samples=200, centers=[(-1, -1), (1, 1)], cluster_std=0.5)
 Y[Y == 0] = -1 # to have +/- 1 labels
 X_train, X_test, y_train, y_test = train_test_split(X, Y)
 X_train, X_test = X_train.T, X_test.T
-aug.fit(X, Y)
+aug.fit(X, Y, num_iter=10)
 
 plot_decision_boundary(X, Y, aug.w, aug.w0)

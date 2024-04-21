@@ -30,8 +30,8 @@ def solve_augmented_lagrangian(X, y, lamda_0, mu_0, p0, C, beta, p_max, num_iter
 
     for k in range(num_iter):
 
-        print("debug log", f"augmented lagrangian iteration {k}",
-              f"Constructing new Augmented lagrangian with mu={mu_k}, p={p_k}")
+        #print("debug log", f"augmented lagrangian iteration {k}",
+        #      f"Constructing new Augmented lagrangian with mu={mu_k}, p={p_k}")
         # Build new lagrangian
         L = Lagrangian(X, y, mu_k, p_k)
 
@@ -60,7 +60,7 @@ def projected_gradient_descent(f, df, x0, a, b, sigma, beta, alpha_0, num_iter=1
 
     f_score = f(xk)
     for k in range(num_iter):
-        print("debug log", f"Projected Gradient descent iteration {k}")
+        #print("debug log", f"Projected Gradient descent iteration {k}")
         dk = -df(xk)
         alpha_k = ArmijoRule(f, xk, -dk, f(xk), dk, sigma, beta, alpha_0, True, p)
 

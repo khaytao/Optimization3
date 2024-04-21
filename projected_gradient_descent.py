@@ -33,8 +33,6 @@ def get_projection(a, b):
 #
 #     return x_alpha
 
-armijo_calls = [0]
-
 
 def ArmijoRule(f: callable, x_k: np.array, df_xk: np.array, f_xk: float, d_k: np.array, sigma, beta, alpha_0,
                Flag=False, projection: callable = None):
@@ -86,17 +84,8 @@ def ArmijoRule(f: callable, x_k: np.array, df_xk: np.array, f_xk: float, d_k: np
 
             break
 
-    # print(f'RHS:{sigma * df_xk @  d_k * alpha}')
-    # print(f'LHS:{f(x_alpha) - f_xk}')
-    # x_alpha = get_x(alpha)
-    # import matplotlib.pyplot as plt
-    # plt.figure()
-    # plt.plot(xs, yf)
-    # plt.plot(alpha, f(x_alpha))
-    # plt.savefig(f"outputs\\{armijo_calls[0]}.png")
-    # armijo_calls[0] += 1
-    print("debug log", f"Armijo Rule", f"alpha value is {alpha}", f"f(alpha) = {f(get_x(alpha))}",
-          f"RHS value is {f_xk + sigma * df_xk @ (x_alpha - x_k)}")
+    #print("debug log", f"Armijo Rule", f"alpha value is {alpha}", f"f(alpha) = {f(get_x(alpha))}",
+    #      f"RHS value is {f_xk + sigma * df_xk @ (x_alpha - x_k)}")
     return alpha
 
 
