@@ -17,7 +17,7 @@ class AugmentedLagrangianSVM:
             armijo_sigma=0.3, armijo_beta=0.1, armijo_a0=10,
             C=0.07):
         if lamda_0 is None:
-            lamda_0 = np.zeros_like(*y.shape) # initialize with zeros if no better guess
+            lamda_0 = np.zeros_like(y)  # initialize with zeros if no better guess
 
         # internal functions implemented with X[num_features, num samples]. Transposing to use the same API as sklearn which is X[num samples, num_features]
         X = X.T
