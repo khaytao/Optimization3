@@ -4,17 +4,6 @@ from tqdm import tqdm
 import numpy as np
 from projected_gradient_descent import ArmijoRule, get_projection
 
-from ObjectiveFuncion import ObjectiveFunction
-
-
-# todo delete
-# def quadratic_form(lamda, X, y):
-#     # # Calculate the outer product of lambda and y, and then multiply element-wise with the outer product of y itself
-#     # L = np.outer(lamda, lamda) * np.outer(y, y)
-#     # # Compute the matrix product of X and its transpose, and then perform element-wise multiplication with L
-#     # K = X @ X.T * L
-#     # # Finally, sum all the elements and multiply by 1/2
-#     # return 0.5 * np.sum(K)
 
 def quadratic_form(lamda, X, y, Q=None):
     if Q is None:
@@ -26,11 +15,6 @@ def quadratic_form(lamda, X, y, Q=None):
 def get_Q(X, y):
     Q = np.outer(y, y) * (X.T @ X)
     return Q
-
-
-# def dual_svm(lamda: np.array, X, y):
-#     return np.sum(lamda) - quadratic_form(lamda, X, y)
-
 
 def get_f(Q):
     # - because the original problem is maximization problem.
@@ -79,14 +63,7 @@ def get_augmented_lagrangian(Q, y, mu, p):
     return L
 
 
-def approximate_gradient(x, f, delta=10 ** -5):
-    n = len(x)
-    dx = np.zeros_like(x)
-    I = np.eye(n)
-    for i in range(n):
-        dx[i] = (f(x + delta * I[:, i]) - f(x)) / delta
 
-    return dx
 
 
 def mean_squere_error(x, y):
@@ -111,6 +88,7 @@ def augmented_lagrangian_method(X, y, lamda_0, mu_0, p0, C, beta, p_max, num_ite
 
     print("debug log", "entering Augmented Lagrangian")
     for k in range(num_iter):
+        # calculate objective function
         L = get_augmented_lagrangian(Q, y, mu_k, p_k)
         dl = get_dl(Q, y, mu_k, p_k)
 

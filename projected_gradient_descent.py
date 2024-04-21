@@ -53,7 +53,6 @@ def ArmijoRule(f: callable, x_k: np.array, df_xk: np.array, f_xk: float, d_k: np
     :return:
     """
     # initialize parameters
-    global armijo_calls
     if Flag and callable(projection):
         p = projection
     else:
@@ -70,13 +69,12 @@ def ArmijoRule(f: callable, x_k: np.array, df_xk: np.array, f_xk: float, d_k: np
 
     xs = np.linspace(0, 1, 1000)
     yf = np.array([f(get_x(alpha)) for alpha in xs.tolist()])
-    import matplotlib.pyplot as plt
 
     def did_converge(x_alpha):
         # print(f'RHS:{sigma * df_xk @  d_k * alpha}')
         # print(f'LHS:{f(x_alpha) - f_xk}')
         # return f(x_alpha) - f_xk <= sigma * df_xk @  d_k * alpha  # Equivalent to (x_alpha - x_k)
-        return f(x_alpha) - f_xk <= sigma * df_xk @ (x_alpha - x_k)  # Equivalent to (x_alpha - x_k)
+        return f(x_alpha) - f_xk <= sigma * df_xk @ (x_alpha - x_k)
 
     while not did_converge(x_alpha):  # todo maybe add restriction on number of iterations
         alpha = beta * alpha
@@ -84,36 +82,72 @@ def ArmijoRule(f: callable, x_k: np.array, df_xk: np.array, f_xk: float, d_k: np
         # print(f"Amarijo: {alpha}")
         if alpha < 1e-8 and alpha < np.linalg.norm((x_alpha - x_k),
                                                    ord=2):  # A practical threshold to avoid infinite loops
-            print("we didn't converge")
-            print(np.linalg.norm((x_alpha - x_k), ord=2))
 
             break
 
     # print(f'RHS:{sigma * df_xk @  d_k * alpha}')
     # print(f'LHS:{f(x_alpha) - f_xk}')
-    x_alpha = get_x(alpha)
-    plt.figure()
-    plt.plot(xs, yf)
-    plt.plot(alpha, f(x_alpha))
-    plt.savefig(f"outputs\\{armijo_calls[0]}.png")
-    armijo_calls[0] += 1
+    # x_alpha = get_x(alpha)
+    # import matplotlib.pyplot as plt
+    # plt.figure()
+    # plt.plot(xs, yf)
+    # plt.plot(alpha, f(x_alpha))
+    # plt.savefig(f"outputs\\{armijo_calls[0]}.png")
+    # armijo_calls[0] += 1
+    print("debug log", f"Armijo Rule", f"alpha value is {alpha}", f"f(alpha) = {f(get_x(alpha))}",
+          f"RHS value is {f_xk + sigma * df_xk @ (x_alpha - x_k)}")
     return alpha
 
 
-def projected_gradient_descent(f, df, x0, a, b, sigma, beta, alpha_0, num_iter=100, tolerance=0.01):
+def compute_projected_gradient(x, grad, feasible_region_projector):
     """
+    Compute the projected gradient at point x for a given gradient and feasible region projection function.
+    """
+    unprojected_step = x - grad
+    projected_step = feasible_region_projector(unprojected_step)
+    projected_gradient = projected_step - x
+    return projected_gradient
 
-    :param f:
-    :param df:
-    :param x0:
-    :param a:
-    :param b:
-    :param sigma:
-    :param beta:
-    :param alpha_0:
-    :param num_iter:
-    :param tolerance:
-    :return:
+
+# # Usage in a gradient descent loop:
+# projected_grad = compute_projected_gradient(xk, grad_f(xk), projection_func)
+# if np.linalg.norm(projected_grad) < tolerance:
+#     break
+
+
+def approximate_gradient(x, f, delta=10 ** -5):
+    n = len(x)
+    dx = np.zeros_like(x)
+    I = np.eye(n)
+    for i in range(n):
+        dx[i] = (f(x + delta * I[:, i]) - f(x)) / delta
+
+    return dx
+
+
+def projected_gradient_descent(f, df, x0, a, b, sigma, beta, alpha_0, num_iter=100, tolerance=0.01,
+                               alpha_tolerance=10 ** -5):
+    """
+    Performs the projected gradient descent algorithm to find a local minimum of a given function within specified bounds.
+
+    Parameters:
+        f (callable): The objective function to minimize.
+        df (callable): The gradient of the objective function.
+        x0 (ndarray): The starting point of the algorithm.
+        a (float): The lower bound of the projection interval.
+        b (float): The upper bound of the projection interval.
+        sigma (float): The sufficient decrease constant in the Armijo condition (part of line search).
+        beta (float): The factor by which the step size is multiplied in each iteration (should be between 0 and 1).
+        alpha_0 (float): The initial step size.
+        num_iter (int, optional): The maximum number of iterations to run. Default is 100.
+        tolerance (float, optional): The tolerance for the stopping criterion based on the norm of the gradient. Default is 0.01.
+
+    Returns:
+        float or ndarray: The approximate local minimum found by the algorithm.
+
+    Uses Armijo's rule for adaptive step size along with a projection onto the interval [a, b] to ensure that the
+    updates remain within this interval. Logs debug information regarding the progression of the algorithm, including
+    iteration number and the norm of the gradient.
     """
     xk = x0
 
@@ -122,14 +156,21 @@ def projected_gradient_descent(f, df, x0, a, b, sigma, beta, alpha_0, num_iter=1
     print("debug log", "entering Projected Gradient descent")
     for k in range(num_iter):
         fx = f(xk)
+        dk = -df(xk)  # find descent direction
 
-        dk = - df(xk)  # find descent direction
-
+        # because this is a constrained problem, we;ll check the size of the projected gradient instead
+        projected_grad = compute_projected_gradient(xk, df(xk), p)
+        # debug - compare calculated gradient to approximate gradient
+        dx_approximate = approximate_gradient(dk, f)
+        # dk = -dx_approximate
         print("debug log", f"Projected Gradient descent iteration {k}",
-              f"norm of gradient is {np.linalg.norm(dk)}")
-        if np.linalg.norm(dk) < tolerance: # If gradient is small enough, we reached the minimum.
-            return xk
-        ak = ArmijoRule(f, xk, -dk, fx, dk, sigma, beta, alpha_0, True, p)  # find step size
+              f"norm of projected gradient is {np.linalg.norm(projected_grad)}",
+              f"distance between approximate and exact gradients is {np.linalg.norm(dx_approximate + dk)}")
 
+        # Finding the optimal step size using Armijo's rule with projection
+        ak = ArmijoRule(f, xk, -dk, fx, dk, sigma, beta, alpha_0, True, p)  # find step size
         xk = p(xk + ak * dk)
+
+        if np.linalg.norm(projected_grad) < tolerance or ak < alpha_tolerance:
+            break
     return xk

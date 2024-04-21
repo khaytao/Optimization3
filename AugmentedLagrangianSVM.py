@@ -16,8 +16,8 @@ class AugmentedLagrangianSVM:
             C=0.07):
         if lamda_0 is None:
             np.random.seed(0)
-            lamda_0 = np.random.rand(*y.shape) * C  # initialize randomly if no better guess
-
+            #lamda_0 = np.random.rand(*y.shape) * C  # initialize randomly if no better guess
+            lamda_0 = np.ones_like(y) * C / 2
         # internal functions implemented with X[num_features, num samples]. Transposing to use the same API as sklearn
         X = X.T
         y = y.T

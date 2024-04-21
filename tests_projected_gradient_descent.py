@@ -2,6 +2,7 @@ from projected_gradient_descent import *
 import unittest
 import numpy as np
 
+
 def f(x):
     # Example: Quadratic function f(x) = x^T A x + b^T x + c
     A = np.array([[3, 2], [2, 6]])
@@ -9,15 +10,18 @@ def f(x):
     c = 5
     return x.T @ A @ x + b.T @ x + c
 
+
 def grad_f(x):
     # Gradient of the quadratic function above
     A = np.array([[3, 2], [2, 6]])
     b = np.array([1, 1])
     return 2 * A @ x + b
 
+
 def g_prime(alpha, x, d):
     # Derivative of g(alpha)
     return grad_f(x + alpha * d).dot(d)
+
 
 # Example vectors
 x = np.array([1, 2])
@@ -30,6 +34,7 @@ d_k = np.reshape(np.array([1, 1]), (2,))
 sigma = 0.25
 beta = 0.5
 alpha_0 = 1
+
 
 class TestArmijoRule(unittest.TestCase):
     def test_g_prime_at_zero(self):
@@ -136,7 +141,7 @@ class TestArmijoRule(unittest.TestCase):
             while inequality_satisfied:
                 if func.eval(x + np.power(beta, i) * d) <= func.eval(x) + np.power(beta, i) * sigma * func.gradient(
                         x).dot(
-                        d):
+                    d):
                     break
 
                 i += 1
@@ -146,16 +151,19 @@ class TestArmijoRule(unittest.TestCase):
         class Quardatic:
             def __init__(self):
                 pass
+
             def eval(self, x):
                 return x.T @ x
 
             def gradient(self, x):
                 return 2 * x
+
         f = Quardatic()
         x_k = np.array([0.5])
         d_k = -f.gradient(x_k)
         p = get_projection(-1, 1)
-        alpha_hat = ArmijoRule(f.eval, x_k, -d_k, f.eval(x_k), d_k, sigma=0.006, beta=0.8, alpha_0=10, Flag=False, projection=p)
+        alpha_hat = ArmijoRule(f.eval, x_k, -d_k, f.eval(x_k), d_k, sigma=0.006, beta=0.8, alpha_0=10, Flag=False,
+                               projection=p)
         alpha_hat2 = step_size(0.8, 0.03, x_k, d_k, f)
         x_k2 = p(x_k + alpha_hat * d_k)
         print(f'alpha hat is: {alpha_hat}')
@@ -163,6 +171,48 @@ class TestArmijoRule(unittest.TestCase):
 
         self.assertAlmostEqual(alpha_hat, alpha_hat2)
 
+
+import unittest
+import numpy as np
+
+
+# Assuming the following imports from your code
+# from your_module import projected_gradient_descent, ArmijoRule
+
+def simple_quadratic(x):
+    return (x - 3) ** 2
+
+
+def grad_simple_quadratic(x):
+    return 2 * (x - 3)
+
+
+class TestProjectedGradientDescent(unittest.TestCase):
+    def test_convergence(self):
+        """ Test convergence on a simple quadratic function. """
+        result = projected_gradient_descent(simple_quadratic, grad_simple_quadratic, x0=np.array([2]), a=1, b=5, sigma=0.01,
+                                            beta=0.5, alpha_0=1)
+        self.assertAlmostEqual(result, 3, delta=0.1)
+
+    def test_projection_effect(self):
+        """ Ensure that the projection mechanism works correctly. """
+        result = projected_gradient_descent(simple_quadratic, grad_simple_quadratic, x0=np.array([6]), a=4, b=10, sigma=0.01,
+                                            beta=0.5, alpha_0=1)
+        print(result)
+        self.assertAlmostEqual(result, 4, delta=0.1)
+
+    def test_tolerance_termination(self):
+        """ Test that the algorithm terminates when the gradient norm is below the tolerance. """
+        result = projected_gradient_descent(simple_quadratic, grad_simple_quadratic, x0=np.array([2.99]), a=1, b=5, sigma=0.01,
+                                            beta=0.5, alpha_0=1, tolerance=0.05) # starting very close to solution
+        pd = compute_projected_gradient(result, grad_simple_quadratic(result), get_projection(1, 5))
+        self.assertTrue(np.linalg.norm(pd) < 0.05)
+
+    def test_boundary_handling(self):
+        """ Test that values are kept within the specified boundaries throughout iterations. """
+        result = projected_gradient_descent(simple_quadratic, grad_simple_quadratic, x0=np.array([0]), a=1, b=5, sigma=0.01,
+                                            beta=0.5, alpha_0=1, num_iter=200)
+        self.assertTrue(1 <= result <= 5)
 
 
 # Run the tests
