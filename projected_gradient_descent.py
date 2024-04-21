@@ -1,3 +1,4 @@
+import matplotlib.pyplot as plt
 import numpy as np
 
 
@@ -80,7 +81,7 @@ def ArmijoRule(f: callable, x_k: np.array, df_xk: np.array, f_xk: float, d_k: np
         alpha = beta * alpha
         x_alpha = get_x(alpha)
         # print(f"Amarijo: {alpha}")
-        if alpha < 1e-8 and alpha < np.linalg.norm((x_alpha - x_k),
+        if alpha < 1e-6 and alpha < np.linalg.norm((x_alpha - x_k),
                                                    ord=2):  # A practical threshold to avoid infinite loops
 
             break
@@ -101,19 +102,12 @@ def ArmijoRule(f: callable, x_k: np.array, df_xk: np.array, f_xk: float, d_k: np
 
 def compute_projected_gradient(x, grad, feasible_region_projector):
     """
-    Compute the projected gradient at point x for a given gradient and feasible region projection function.
+    More accurately compute the projected gradient at point x for a given gradient and feasible region projection function.
     """
-    unprojected_step = x - grad
-    projected_step = feasible_region_projector(unprojected_step)
-    projected_gradient = projected_step - x
+    projected_x = feasible_region_projector(x)
+    projected_step = feasible_region_projector(x - grad)
+    projected_gradient = projected_step - projected_x
     return projected_gradient
-
-
-# # Usage in a gradient descent loop:
-# projected_grad = compute_projected_gradient(xk, grad_f(xk), projection_func)
-# if np.linalg.norm(projected_grad) < tolerance:
-#     break
-
 
 def approximate_gradient(x, f, delta=10 ** -5):
     n = len(x)
@@ -152,25 +146,34 @@ def projected_gradient_descent(f, df, x0, a, b, sigma, beta, alpha_0, num_iter=1
     xk = x0
 
     p = get_projection(a, b)
-
+    it_number = []
+    f_value = []
+    projected_grad_values = []
     print("debug log", "entering Projected Gradient descent")
     for k in range(num_iter):
+        it_number.append(k)
         fx = f(xk)
-        dk = -df(xk)  # find descent direction
+        f_value.append(fx)  # todo delete
+        #dk = -df(xk)  # find descent direction
+        dk = p(xk -df(xk)) - xk  # search direction projected onto feasible set
 
         # because this is a constrained problem, we;ll check the size of the projected gradient instead
         projected_grad = compute_projected_gradient(xk, df(xk), p)
-        # debug - compare calculated gradient to approximate gradient
-        dx_approximate = approximate_gradient(dk, f)
-        # dk = -dx_approximate
-        print("debug log", f"Projected Gradient descent iteration {k}",
-              f"norm of projected gradient is {np.linalg.norm(projected_grad)}",
-              f"distance between approximate and exact gradients is {np.linalg.norm(dx_approximate + dk)}")
 
+        print("debug log", f"Projected Gradient descent iteration {k}",
+              f"norm of projected gradient is {np.linalg.norm(projected_grad)}")
+        projected_grad_values.append(np.linalg.norm(projected_grad))
         # Finding the optimal step size using Armijo's rule with projection
         ak = ArmijoRule(f, xk, -dk, fx, dk, sigma, beta, alpha_0, True, p)  # find step size
+
+        diff = p(xk + ak * dk) - xk
         xk = p(xk + ak * dk)
 
-        if np.linalg.norm(projected_grad) < tolerance or ak < alpha_tolerance:
+        if np.linalg.norm(projected_grad) < tolerance or np.linalg.norm(diff) < alpha_tolerance:
             break
+
+    # plt.figure()
+    # plt.plot(it_number, f_value, label="f")
+    # plt.plot(it_number, projected_grad_values, label="projected gradient")
+    # plt.show()
     return xk

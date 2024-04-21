@@ -47,7 +47,7 @@ def get_dl(Q, y, mu, p):
 
     def dl(lamda):
         """we stack the derivative over mu under the derivative by lamda."""
-        dlamda = df(lamda) + mu * y + p * (y @ y) * lamda
+        dlamda = df(lamda) + mu * y + p * (lamda @ y) * y
         return dlamda
 
     return dl
@@ -61,9 +61,6 @@ def get_augmented_lagrangian(Q, y, mu, p):
         return f(lamda) + mu * h(lamda) + 0.5 * p * h(lamda) ** 2
 
     return L
-
-
-
 
 
 def mean_squere_error(x, y):
@@ -89,6 +86,7 @@ def augmented_lagrangian_method(X, y, lamda_0, mu_0, p0, C, beta, p_max, num_ite
     print("debug log", "entering Augmented Lagrangian")
     for k in range(num_iter):
         # calculate objective function
+        print("debug log", f"augmented lagrangian iteration {k}", f"Constructing new Augmented lagrangian with mu={mu_k}, p={p_k}")
         L = get_augmented_lagrangian(Q, y, mu_k, p_k)
         dl = get_dl(Q, y, mu_k, p_k)
 

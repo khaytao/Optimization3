@@ -172,9 +172,6 @@ class TestArmijoRule(unittest.TestCase):
         self.assertAlmostEqual(alpha_hat, alpha_hat2)
 
 
-import unittest
-import numpy as np
-
 
 # Assuming the following imports from your code
 # from your_module import projected_gradient_descent, ArmijoRule

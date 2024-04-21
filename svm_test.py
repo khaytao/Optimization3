@@ -39,15 +39,72 @@ class TestSVMDualProblem(unittest.TestCase):
 
         self.assertAlmostEqual(h(lamda), 0.5)
 
-    def test_augmented_lagrangian(self):
+    def test_augmented_lagrangian_y_lamda_orthogonal(self):
         X = np.array([[1, 2], [3, 4]])
         y = np.array([1, -1])
-        Q = get_Q(X, y)
+        Q = get_Q(X, y) # np.array([[10, -14], [-14, 20]])
+        np.testing.assert_array_equal(get_Q(X, y), np.array([[10, -14], [-14, 20]]))
         lamda = np.array([1, 1])
         mu = 2
         p = 5
         L = get_augmented_lagrangian(Q, y, mu, p)
-        self.assertAlmostEqual(L(lamda), 0.5)
+        self.assertAlmostEqual(L(lamda), -1)
+
+    def test_augmented_lagrangian(self):
+        X = np.array([[1, 2], [3, 4]])
+        y = np.array([1, -1])
+        Q = get_Q(X, y)  # np.array([[10, -14], [-14, 20]])
+        np.testing.assert_array_equal(get_Q(X, y), np.array([[10, -14], [-14, 20]]))
+        lamda = np.array([0.5, 0.7])
+        mu = 2
+        p = 5
+        L = get_augmented_lagrangian(Q, y, mu, p)
+        self.assertAlmostEqual(L(lamda), -1)
+
+
+def mock_get_df(Q):
+    """A mock version of get_df that returns a gradient function based on matrix Q."""
+    def df(lamda):
+        return Q @ lamda - np.ones_like(lamda)
+    return df
+
+class TestGetDl(unittest.TestCase):
+    def setUp(self):
+        """Set up common test variables."""
+        self.Q = np.array([[1, 0], [0, 1]])  # Identity matrix for simplicity
+        self.y = np.array([1, -1])
+        self.mu = 0.5
+        self.p = 1.0
+        self.lamda = np.array([1, 2])
+
+    def test_derivative_computation(self):
+        """Test the derivative computation is as expected."""
+        df = mock_get_df(self.Q)  # Mocking get_df
+        dl = get_dl(self.Q, self.y, self.mu, self.p)
+        expected_dlamda = df(self.lamda) + self.mu * self.y + self.p * (self.lamda @ self.y) * self.y
+        computed_dlamda = dl(self.lamda)
+        np.testing.assert_array_almost_equal(computed_dlamda, expected_dlamda)
+
+    def test_dependency_on_get_df(self):
+        """Ensure that get_dl uses get_df correctly."""
+        original_df = get_df(self.Q)  # Assuming get_df is correct
+        dl = get_dl(self.Q, self.y, self.mu, self.p)
+        # Compare dl output with the manual calculation using original_df
+        expected_dlamda = original_df(self.lamda) + self.mu * self.y + self.p * (self.y @ self.y) * self.lamda
+        computed_dlamda = dl(self.lamda)
+        np.testing.assert_array_almost_equal(computed_dlamda, expected_dlamda)
+
+    def test_vector_and_scalar_handling(self):
+        """Test the handling of vector and scalar parameters."""
+        df = mock_get_df(self.Q)
+        # Test with different scalar values of mu and p
+        for mu, p in [(0, 1), (1, 0), (-1, 1)]:
+            dl = get_dl(self.Q, self.y, mu, p)
+            expected_dlamda = df(self.lamda) + mu * self.y + p * (self.y @ self.y) * self.lamda
+            computed_dlamda = dl(self.lamda)
+            np.testing.assert_array_almost_equal(computed_dlamda, expected_dlamda)
+
+
 # To run the tests
 if __name__ == '__main__':
     unittest.main()
