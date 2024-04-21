@@ -44,7 +44,7 @@ def question_17():
     X_test = ExtractFeatures(X_test, 50)
 
     # Create our SVM classifier
-    aug = AugmentedLagrangianSVM(kernel_type="gas_rad")
+    aug = AugmentedLagrangianSVM(kernel_type="sig")
     aug.fit(X_train.T, y_train, num_iter=10)
 
     # Predict on the test set

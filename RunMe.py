@@ -17,6 +17,7 @@ def q16():
     print()
     print("===================")
 
+
 def q17():
     print("===================")
     print("Question 17 (Using kernel):")

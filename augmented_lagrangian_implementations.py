@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def K(x, y, kernel_type=None, d=2, gamma=1/2, kappa=2, c=-0.1):
+def K(x, y, kernel_type=None, d=2, gamma=1/2, kappa=3.5, c=-0.1):
     if kernel_type is None:
         return x @ y
     if kernel_type == "ploy_hom":
