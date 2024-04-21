@@ -118,13 +118,52 @@ class TestArmijoRule(unittest.TestCase):
         x_k = np.array([0.5])
         d_k = -df(x_k)
         p = get_projection(-1, 1)
-        alpha_hat = ArmijoRule(f, x_k, df(x_k), f(x_k), d_k, sigma=0.6, beta=0.8, alpha_0=1, Flag=True, projection=p)
+        alpha_hat = ArmijoRule(f, x_k, df(x_k), f(x_k), d_k, sigma=0.006, beta=0.8, alpha_0=10, Flag=True, projection=p)
         x_k2 = p(x_k + alpha_hat * d_k)
         print(f'alpha hat is: {alpha_hat}')
         print(f'dk hat is: {d_k}')
         print(f'x_k2 hat is: {x_k2}')
         print(f'function value hat is: {f(x_k2)}')
         self.assertAlmostEqual(f(x_k2), 0)
+
+    def test_compare_armijo(self):
+        def step_size(beta, sigma, x, d, func):
+            """
+            Armijo's Rule
+            """
+            i = 0
+            inequality_satisfied = True
+            while inequality_satisfied:
+                if func.eval(x + np.power(beta, i) * d) <= func.eval(x) + np.power(beta, i) * sigma * func.gradient(
+                        x).dot(
+                        d):
+                    break
+
+                i += 1
+
+            return np.power(beta, i)
+
+        class Quardatic:
+            def __init__(self):
+                pass
+            def eval(self, x):
+                return x.T @ x
+
+            def gradient(self, x):
+                return 2 * x
+        f = Quardatic()
+        x_k = np.array([0.5])
+        d_k = -f.gradient(x_k)
+        p = get_projection(-1, 1)
+        alpha_hat = ArmijoRule(f.eval, x_k, -d_k, f.eval(x_k), d_k, sigma=0.006, beta=0.8, alpha_0=10, Flag=False, projection=p)
+        alpha_hat2 = step_size(0.8, 0.03, x_k, d_k, f)
+        x_k2 = p(x_k + alpha_hat * d_k)
+        print(f'alpha hat is: {alpha_hat}')
+        print(f'alpha hat is: {alpha_hat2}')
+
+        self.assertAlmostEqual(alpha_hat, alpha_hat2)
+
+
 
 # Run the tests
 if __name__ == '__main__':

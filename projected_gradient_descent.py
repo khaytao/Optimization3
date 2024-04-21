@@ -33,8 +33,10 @@ def get_projection(a, b):
 #     return x_alpha
 
 armijo_calls = [0]
+
+
 def ArmijoRule(f: callable, x_k: np.array, df_xk: np.array, f_xk: float, d_k: np.array, sigma, beta, alpha_0,
-               Flag=False, projection:callable = None):
+               Flag=False, projection: callable = None):
     """
     Perform a line search using Armijo rule and return the step size alpha.
 
@@ -74,13 +76,14 @@ def ArmijoRule(f: callable, x_k: np.array, df_xk: np.array, f_xk: float, d_k: np
         # print(f'RHS:{sigma * df_xk @  d_k * alpha}')
         # print(f'LHS:{f(x_alpha) - f_xk}')
         # return f(x_alpha) - f_xk <= sigma * df_xk @  d_k * alpha  # Equivalent to (x_alpha - x_k)
-        return f(x_alpha) - f_xk <= sigma * alpha * df_xk @  (x_alpha - x_k)  # Equivalent to (x_alpha - x_k)
+        return f(x_alpha) - f_xk <= sigma * df_xk @ (x_alpha - x_k)  # Equivalent to (x_alpha - x_k)
 
     while not did_converge(x_alpha):  # todo maybe add restriction on number of iterations
         alpha = beta * alpha
         x_alpha = get_x(alpha)
         # print(f"Amarijo: {alpha}")
-        if alpha < 1e-8 and alpha < np.linalg.norm((x_alpha - x_k), ord=2):  # A practical threshold to avoid infinite loops
+        if alpha < 1e-8 and alpha < np.linalg.norm((x_alpha - x_k),
+                                                   ord=2):  # A practical threshold to avoid infinite loops
             print("we didn't converge")
             print(np.linalg.norm((x_alpha - x_k), ord=2))
 
@@ -93,7 +96,7 @@ def ArmijoRule(f: callable, x_k: np.array, df_xk: np.array, f_xk: float, d_k: np
     plt.plot(xs, yf)
     plt.plot(alpha, f(x_alpha))
     plt.savefig(f"outputs\\{armijo_calls[0]}.png")
-    armijo_calls[0]+= 1
+    armijo_calls[0] += 1
     return alpha
 
 
@@ -115,16 +118,18 @@ def projected_gradient_descent(f, df, x0, a, b, sigma, beta, alpha_0, num_iter=1
     xk = x0
 
     p = get_projection(a, b)
+
+    print("debug log", "entering Projected Gradient descent")
     for k in range(num_iter):
         fx = f(xk)
-        if fx < tolerance:
-            return xk
 
-        # dk = - df(x0)
-        dk = - df(xk)
-        ak = ArmijoRule(f, xk, -dk, fx, dk, sigma, beta, alpha_0, True,  p)
-        if ak < 1e-8:
-            print(f'ak in so small (ak = {ak}) we are not moving. exiting the function in iteration {k}.')
+        dk = - df(xk)  # find descent direction
+
+        print("debug log", f"Projected Gradient descent iteration {k}",
+              f"norm of gradient is {np.linalg.norm(dk)}")
+        if np.linalg.norm(dk) < tolerance: # If gradient is small enough, we reached the minimum.
             return xk
+        ak = ArmijoRule(f, xk, -dk, fx, dk, sigma, beta, alpha_0, True, p)  # find step size
+
         xk = p(xk + ak * dk)
     return xk
